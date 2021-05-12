@@ -10,9 +10,17 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from Altruist.fi_techniques import FeatureImportance
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
+
 import pandas as pd
 import numpy as np
-
+import seaborn as sns
+import urllib
+import networkx as nx
+import matplotlib.pyplot as plt
+from ipywidgets import interact, interactive, fixed, interact_manual
+import ipywidgets as widgets
 
 
 banknote_datadset = pd.read_csv('https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv')
@@ -51,17 +59,24 @@ scalers[1] = scaler_svm
 X_svm = scaler_svm.transform(dataset_values)
 fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
+#
+# vars = [0] * len(feature_names)
+# for i in range(len(feature_names)):
+#     v = input(f"     {feature_names[i]}: ")
+#     vars[i] = v
+#
+# vars = [np.array(vars)]
+#
+# print(class_names[svm.predict(vars)[0]])
+def goBack():
+    print("Robin: Do you want to go back?")
+    print('\tyes\n\tno')
+    user_input = input().lower()
+    if 'yes' in user_input:
+        return True
+    return False
 
-vars = [0] * len(feature_names)
-for i in range(len(feature_names)):
-    v = input(f"     {feature_names[i]}: ")
-    vars[i] = v
-
-vars = [np.array(vars)]
-
-print(class_names[svm.predict(vars)[0]])
-
-list_words = ['yes','ready', 'bye', 'hello']
+list_words = ['yes', 'bye', 'hello', 'informations', 'interpretation']
 list_syn = {}
 
 for word in list_words:
@@ -93,17 +108,23 @@ for key, values in keywords.items():
 
 responses = {
     'hello': "Robin: Hello! Do you want predict if those banknotes  are valid or not\n",
-    'yes': "Robin: Okay! Fill in the following features\n"
+    'yes': "Robin: Okay! Fill in the following features\n",
+    'bye': "Robin: Thank you for visiting.",
+    'error': "Robin: I'm a bot programmed to answer only some of the frequent questions. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n",
+    'phase2': "\t1)informations about LIME\n\t2)informations about Shap\n\t3)informations about Permutation Importance(PI)\n\t4)interpretation of LIME\n\t5)interpretation of Shap\n\t6)interpretation of Permutation Importance(PI)\n",
+    'no method': "Robin: Please give also a method",
+    'infoLime': "Info of LIME...",
+    'infoShap': "Info of Shap...",
+    'infoPI': "Info of Permutation Importance"
 
 }
 
-print(list_syn)
-user_name = input(f"Hi​! My name is Robin. Let me know if you have any questions regarding our tool!\nWhat's your name?\n")
-print(f"Robin: Hello {user_name}\nAre you ready to predict some banknotes?\n")
+user_name = input(f"\n\nHi​! My name is Robin. Let me know if you have any questions regarding our tool!\nWhat's your name?\n")
+print(f"Robin: Hello {user_name}\nAre you ready to predict some banknotes?\n1)yes I am ready!\n2)no bye.")
+
 
 while(True):
     user_input = input(f"{user_name}: ").lower()
-
 
     matched = None
     for key, pattern in keywords_dict.items():
@@ -111,13 +132,13 @@ while(True):
         if re.search(pattern, user_input):
             matched = key
 
+    print('matched=', matched)
     if matched == 'bye':
-        print("Robin: Thank you for visiting.")
+        print(responses[matched])
         break
 
-    if matched not in responses:
-        print("Robin: I'm a bot programmed to answer only some of the frequent questions. Here are the topics I can help you with.")
-        print("Robin: Select the topic or write your question below\n")
+    if matched not in keywords:
+        print(responses["error"])
 
     else:
         if matched == 'yes':
@@ -129,7 +150,37 @@ while(True):
                 vars[i] = v
 
             vars = [np.array(vars)]
-            print("The prediction is that it is a ", class_names[svm.predict(vars)[0]])
+            print("Robin: The prediction is that is a ", class_names[svm.predict(vars)[0]], '\n')
+            print("Robin: Perfect! Νow you can see the interpretation of some models, as well as the informations about them")
+            print(responses['phase2'])
 
-        else:
-            print(responses[matched])
+        elif matched == 'informations':
+            if 'lime' in user_input:
+                print(responses['infoLime'])
+            elif 'shap' in user_input:
+                print(responses['infoShap'])
+            elif 'pi' in user_input or 'permutation importance' in user_input:
+                print(responses['infoPI'])
+            else:
+                print(responses['no method'])
+
+            if goBack(): print(responses['phase2'])
+
+        elif matched == 'interpretation':
+            my_cmap = cm.get_cmap('Greens', 17)
+            my_norm = Normalize(vmin = 0, vmax = 4)
+
+            fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
+            if 'lime' in user_input:
+                # axs.bar(feature_names, fi_svm.fi_lime(vars[0],_, svm),color=my_cmap(my_norm([1,2,3,4])))
+                # axs.set_title('LIME')
+                # axs.set_ylabel('Feature Importance')
+                print('interpretation of lime')
+            elif 'shap' in user_input:
+                print('interpretation of shap')
+            elif 'pi' in user_input:
+                print('interpretation of pi')
+            else:
+                print(responses['no method'])
+
+            if goBack(): print(responses['phase2'])
