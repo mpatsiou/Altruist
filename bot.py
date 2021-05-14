@@ -59,24 +59,9 @@ scalers[1] = scaler_svm
 X_svm = scaler_svm.transform(dataset_values)
 fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
-#
-# vars = [0] * len(feature_names)
-# for i in range(len(feature_names)):
-#     v = input(f"     {feature_names[i]}: ")
-#     vars[i] = v
-#
-# vars = [np.array(vars)]
-#
-# print(class_names[svm.predict(vars)[0]])
-def goBack():
-    print("Robin: Do you want to go back?")
-    print('\tyes\n\tno')
-    user_input = input().lower()
-    if 'yes' in user_input:
-        return True
-    return False
 
-list_words = ['yes', 'bye', 'hello', 'informations', 'interpretation']
+bot_name = "Robin"
+list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation']
 list_syn = {}
 
 for word in list_words:
@@ -106,23 +91,66 @@ for key in list_syn:
 for key, values in keywords.items():
     keywords_dict[key]=re.compile('|'.join(values))
 
-responses = {
-    'hello': "Robin: Hello! Do you want predict if those banknotes  are valid or not\n",
-    'yes': "Robin: Okay! Fill in the following features\n",
-    'bye': "Robin: Thank you for visiting.",
-    'error': "Robin: I'm a bot programmed to answer only some of the frequent questions. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n",
-    'phase2': "\t1)informations about LIME\n\t2)informations about Shap\n\t3)informations about Permutation Importance(PI)\n\t4)interpretation of LIME\n\t5)interpretation of Shap\n\t6)interpretation of Permutation Importance(PI)\n",
-    'no method': "Robin: Please give also a method",
-    'infoLime': "Info of LIME...",
-    'infoShap': "Info of Shap...",
-    'infoPI': "Info of Permutation Importance"
 
+def readBanknote(feature_names):
+    print(f"{bot_name}: Okay! Fill in the following features\n")
+    vars = [0] * len(feature_names)
+    for i in range(len(feature_names)):
+        v = input(f"     {feature_names[i]}: ")
+        vars[i] = v
+
+    vars = [np.array(vars)]
+    return vars
+
+def prediction(vars):
+    print(f"{bot_name}: The prediction is that is a ", class_names[svm.predict(vars)[0]], '\n')
+
+def phase2Menu():
+    print(f"{bot_name}: Νow you can see the interpretation of some models, as well as the informations about them")
+    print("\t1)informations about LIME\n\t2)informations about Shap\n\t3)informations about Permutation Importance(PI)")
+    print("\t4)interpretation of LIME\n\t5)interpretation of Shap\n\t6)interpretation of Permutation Importance(PI)\n")
+
+def infoLime():
+    print(f"{bot_name}: Info of LIME...")
+
+def infoShap():
+    print(f"{bot_name}: Info of Shap...")
+
+def infoPI():
+    print(f"{bot_name}: Info of PI...")
+
+def goBack():
+    print("Robin: Do you want to go back?")
+    print('\tyes\n\tno')
+    user_input = input().lower()
+    if 'yes' in user_input:
+        return True
+    return False
+
+responses = {
+    'phase1': {
+        'yes': readBanknote,
+        #do the no response
+    }
+    ,
+    'phase2': {
+        #'menu': printMenu
+        'infoLime': infoLime,
+        'infoShap': infoShap,
+        'infoPI': infoPI,
+        'no method': lambda: f"{bot_name}: Please give also a method"
+    },
+    'default': {
+        'hello': lambda: print(f"{bot_name}: Hello! Time to predict some banknotes"),
+        'quit': lambda: print(f"{bot_name}: Thank you for visiting!"),
+        'error': lambda: print(f"{bot_name}: I'm a bot programmed to answer only some of the frequent questions. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n")
+    }
 }
 
 user_name = input(f"\n\nHi​! My name is Robin. Let me know if you have any questions regarding our tool!\nWhat's your name?\n")
 print(f"Robin: Hello {user_name}\nAre you ready to predict some banknotes?\n1)yes I am ready!\n2)no bye.")
 
-
+phase = 'phase1'
 while(True):
     user_input = input(f"{user_name}: ").lower()
 
@@ -132,47 +160,46 @@ while(True):
         if re.search(pattern, user_input):
             matched = key
 
-    print('matched=', matched)
     if matched == 'bye':
-        print(responses[matched])
+        responses['default']['quit']()
         break
 
     if matched not in keywords:
-        print(responses["error"])
+        responses['default']["error"]()
+        #pass or continue?
 
-    else:
+    if matched == 'hello':
+        responses['default']['hello']()
+        #pass or continue?
+
+    if phase == 'phase1':
         if matched == 'yes':
-            print(responses[matched])
+            vars = responses[phase][matched](feature_names)
+            prediction(vars)
+            phase = 'phase2'
+            phase2Menu()
 
-            vars = [0] * len(feature_names)
-            for i in range(len(feature_names)):
-                v = input(f"     {feature_names[i]}: ")
-                vars[i] = v
+    elif phase == 'phase2':
 
-            vars = [np.array(vars)]
-            print("Robin: The prediction is that is a ", class_names[svm.predict(vars)[0]], '\n')
-            print("Robin: Perfect! Νow you can see the interpretation of some models, as well as the informations about them")
-            print(responses['phase2'])
-
-        elif matched == 'informations':
+        if matched == 'informations':
             if 'lime' in user_input:
-                print(responses['infoLime'])
+                responses[phase]['infoLime']()
             elif 'shap' in user_input:
-                print(responses['infoShap'])
+                responses[phase]['infoShap']()
             elif 'pi' in user_input or 'permutation importance' in user_input:
-                print(responses['infoPI'])
+                responses[phase]['infoPI']()
             else:
                 print(responses['no method'])
 
-            if goBack(): print(responses['phase2'])
+            if goBack(): phase2Menu()
 
         elif matched == 'interpretation':
-            my_cmap = cm.get_cmap('Greens', 17)
-            my_norm = Normalize(vmin = 0, vmax = 4)
-
-            fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
+            # my_cmap = cm.get_cmap('Greens', 17)
+            # my_norm = Normalize(vmin = 0, vmax = 4)
+            #
+            # fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
             if 'lime' in user_input:
-                # axs.bar(feature_names, fi_svm.fi_lime(vars[0],_, svm),color=my_cmap(my_norm([1,2,3,4])))
+                # axs.bar(feature_names, fi_svm.fi_lime(vars[0],None, svm),color=my_cmap(my_norm([1,2,3,4])))
                 # axs.set_title('LIME')
                 # axs.set_ylabel('Feature Importance')
                 print('interpretation of lime')
@@ -181,6 +208,6 @@ while(True):
             elif 'pi' in user_input:
                 print('interpretation of pi')
             else:
-                print(responses['no method'])
+                print(responses[phase]['no method'])
 
-            if goBack(): print(responses['phase2'])
+            if goBack(): phase2Menu()
