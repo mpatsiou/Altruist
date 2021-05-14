@@ -97,7 +97,7 @@ def readBanknote(feature_names):
     vars = [0] * len(feature_names)
     for i in range(len(feature_names)):
         v = input(f"     {feature_names[i]}: ")
-        vars[i] = v
+        vars[i] = float(v)
 
     vars = [np.array(vars)]
     return vars
@@ -194,14 +194,17 @@ while(True):
             if goBack(): phase2Menu()
 
         elif matched == 'interpretation':
-            # my_cmap = cm.get_cmap('Greens', 17)
-            # my_norm = Normalize(vmin = 0, vmax = 4)
-            #
-            # fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
+            my_cmap = cm.get_cmap('Greens', 17)
+            my_norm = Normalize(vmin = 0, vmax = 4)
+
+            fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
             if 'lime' in user_input:
-                # axs.bar(feature_names, fi_svm.fi_lime(vars[0],None, svm),color=my_cmap(my_norm([1,2,3,4])))
-                # axs.set_title('LIME')
-                # axs.set_ylabel('Feature Importance')
+                print(vars)
+                print(vars[0])
+                axs.bar(feature_names, fi_svm.fi_lime(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
+                axs.set_title('LIME')
+                axs.set_ylabel('Feature Importance')
+                plt.show()
                 print('interpretation of lime')
             elif 'shap' in user_input:
                 print('interpretation of shap')
