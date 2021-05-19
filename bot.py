@@ -130,9 +130,7 @@ def goBack():
 responses = {
     'phase1': {
         'yes': readBanknote,
-        #do the no response
-    }
-    ,
+    },
     'phase2': {
         #'menu': printMenu
         'infoLime': infoLime,
@@ -179,6 +177,10 @@ while(True):
             phase = 'phase2'
             phase2Menu()
 
+        elif matched == 'no':
+            responses['default']['quit']()
+            break
+
     elif phase == 'phase2':
 
         if matched == 'informations':
@@ -194,21 +196,28 @@ while(True):
             if goBack(): phase2Menu()
 
         elif matched == 'interpretation':
+
             my_cmap = cm.get_cmap('Greens', 17)
             my_norm = Normalize(vmin = 0, vmax = 4)
 
             fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
             if 'lime' in user_input:
-                print(vars)
-                print(vars[0])
                 axs.bar(feature_names, fi_svm.fi_lime(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
                 axs.set_title('LIME')
                 axs.set_ylabel('Feature Importance')
                 plt.show()
-                print('interpretation of lime')
+
             elif 'shap' in user_input:
+                axs.bar(feature_names, fi_svm.fi_shap(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
+                axs.set_title('Shap')
+                axs.set_ylabel('Feature Importance')
+                plt.show()
                 print('interpretation of shap')
             elif 'pi' in user_input:
+                axs.bar(feature_names, fi_svm.fi_perm_imp(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
+                axs.set_title('PI')
+                axs.set_ylabel('Feature Importance')
+                plt.show()
                 print('interpretation of pi')
             else:
                 print(responses[phase]['no method'])
