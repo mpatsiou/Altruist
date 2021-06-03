@@ -61,7 +61,7 @@ fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
 
 bot_name = "Robin"
-list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation']
+list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
 list_syn = {}
 
 for word in list_words:
@@ -91,7 +91,7 @@ for key in list_syn:
 for key, values in keywords.items():
     keywords_dict[key]=re.compile('|'.join(values))
 
-
+print(list_syn)
 def readBanknote(feature_names):
     print(f"{bot_name}: Okay! Fill in the following features\n")
     vars = [0] * len(feature_names)
@@ -100,6 +100,7 @@ def readBanknote(feature_names):
         vars[i] = float(v)
 
     vars = [np.array(vars)]
+    vars = scaler_svm.transform(vars)
     return vars
 
 def prediction(vars):
@@ -119,13 +120,37 @@ def infoShap():
 def infoPI():
     print(f"{bot_name}: Info of PI...")
 
-def goBack():
-    print("Robin: Do you want to go back?")
+def yesOrNo(question):
+    print(f"{bot_name}: ",question)
     print('\tyes\n\tno')
     user_input = input().lower()
     if 'yes' in user_input:
         return True
-    return False
+    elif 'no' in user_input:
+        return False
+    else:
+        yesOrNo(question)
+
+def phase3Menu():
+    print(f"{bot_name}: After that, I suggest you to use the Altruist. A new methodology that aims to tackle a few problems of feature importance-based aproaches.")
+    print(f"{bot_name}: You can see:")
+    print("\t1)Combinatorial interpretation from Altruist")
+    print("\t2)The untruthful features of LIME\n\t3)The untruthful features of Shap\n\t4)The untruthful features of Permutation Importance(PI)")
+    print("\t5)The counterfactuals for every feature\n\t6)Go to previous step")
+
+def infoAltruist():
+    print(f"{bot_name}: Info of Altruist...")
+
+def plotMethod(feature_names, method, vars, title, yLabel):
+    my_cmap = cm.get_cmap('Greens', 17)
+    my_norm = Normalize(vmin = 0, vmax = 4)
+
+    fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
+
+    axs.bar(feature_names, method(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
+    axs.set_title(title)
+    axs.set_ylabel(yLabel)
+    plt.show()
 
 responses = {
     'phase1': {
@@ -136,7 +161,11 @@ responses = {
         'infoLime': infoLime,
         'infoShap': infoShap,
         'infoPI': infoPI,
-        'no method': lambda: f"{bot_name}: Please give also a method"
+        'noMethod': lambda: print(f"{bot_name}: Please give also a method")
+    },
+    'phase3': {
+        'noMethod': lambda: print(f"{bot_name}: Please give also a method")
+
     },
     'default': {
         'hello': lambda: print(f"{bot_name}: Hello! Time to predict some banknotes"),
@@ -157,6 +186,8 @@ while(True):
         #Using the re search function
         if re.search(pattern, user_input):
             matched = key
+        elif key in user_input:
+            matched = key
 
     if matched == 'bye':
         responses['default']['quit']()
@@ -164,11 +195,11 @@ while(True):
 
     if matched not in keywords:
         responses['default']["error"]()
-        #pass or continue?
+        continue
 
     if matched == 'hello':
         responses['default']['hello']()
-        #pass or continue?
+        continue
 
     if phase == 'phase1':
         if matched == 'yes':
@@ -181,45 +212,63 @@ while(True):
             responses['default']['quit']()
             break
 
-    elif phase == 'phase2':
 
+    elif phase == 'phase2':
         if matched == 'informations':
             if 'lime' in user_input:
                 responses[phase]['infoLime']()
             elif 'shap' in user_input:
                 responses[phase]['infoShap']()
-            elif 'pi' in user_input or 'permutation importance' in user_input:
+            elif ('pi' in user_input) or ('permutation importance' in user_input):
                 responses[phase]['infoPI']()
             else:
-                print(responses['no method'])
+                responses[phase]['noMethod']()
+                continue
 
-            if goBack(): phase2Menu()
 
         elif matched == 'interpretation':
-
-            my_cmap = cm.get_cmap('Greens', 17)
-            my_norm = Normalize(vmin = 0, vmax = 4)
-
-            fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
             if 'lime' in user_input:
-                axs.bar(feature_names, fi_svm.fi_lime(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
-                axs.set_title('LIME')
-                axs.set_ylabel('Feature Importance')
-                plt.show()
+                plotMethod(feature_names, fi_svm.fi_lime, vars, 'LIME', 'Feature Importance')
 
             elif 'shap' in user_input:
-                axs.bar(feature_names, fi_svm.fi_shap(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
-                axs.set_title('Shap')
-                axs.set_ylabel('Feature Importance')
-                plt.show()
-                print('interpretation of shap')
-            elif 'pi' in user_input:
-                axs.bar(feature_names, fi_svm.fi_perm_imp(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
-                axs.set_title('PI')
-                axs.set_ylabel('Feature Importance')
-                plt.show()
-                print('interpretation of pi')
-            else:
-                print(responses[phase]['no method'])
+                plotMethod(feature_names, fi_svm.fi_shap, vars, 'Shap', 'Feature Importance')
 
-            if goBack(): phase2Menu()
+            elif 'pi' in user_input:
+                plotMethod(feature_names, fi_svm.fi_perm_imp, vars, 'PI', 'Feature Importance')
+
+            else:
+                responses[phase]['no method']()
+                continue
+
+        if yesOrNo("Do you want to go back"):
+            phase2Menu()
+        else:
+            phase = "phase3"
+            phase3Menu()
+    elif phase == 'phase3':
+        if matched == 'interpretation':
+            print("Altruist plot")
+        if matched == 'features':
+            if 'lime' in user_input:
+                print('unthruthful lime')
+            elif 'shap' in user_input:
+                print('unthruthful shap')
+            elif ('pi' in user_input) or ('permutation importance' in user_input):
+                print('unthruthful pi')
+            else:
+                responses[phase]['noMethod']()
+                continue
+
+        elif matched == 'counterfactual':
+            print('the counterfactuals is...')
+
+        elif matched == 'previous':
+            phase = 'phase2'
+            phase2Menu();
+            continue
+
+        if yesOrNo('Do you want to go back'):
+            phase3Menu()
+        else:
+            print('thats is bye')
+            break
