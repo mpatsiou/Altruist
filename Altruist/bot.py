@@ -9,7 +9,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from Altruist.fi_techniques import FeatureImportance
+from altruist import Altruist
+from fi_techniques import FeatureImportance
+
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 
@@ -53,12 +55,27 @@ clf = GridSearchCV(pipe, parameters, scoring='f1', cv=10, n_jobs=-1)
 clf.fit(dataset_values, dataset_class)
 scaler_svm = clf.best_estimator_.steps[0][1]
 svm = clf.best_estimator_.steps[1][1]
-classifiers[1] = [svm, str("SVM: "+ str(clf.best_score_))]
+classifiers[1] = [svm, str("SVM: " + str(clf.best_score_))]
 scalers[1] = scaler_svm
 
-X_svm = scaler_svm.transform(dataset_values)
+X_svm = scalers[1].transform(dataset_values)
 fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
+#############################################################################3
+def metaExplanation(X_t, dataset_class, inst, feature_names, class_names):
+    fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
+    fi_names = {fi.fi_lime:'Lime',fi.fi_shap:'Shap',fi.fi_perm_imp:'Permuation Importance'}
+    fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
+
+    fis_scores = []
+    for i in fis:
+        fis_scores.append([])
+
+    print(inst)
+    altruistino = Altruist(classifiers[1][0], X_t, fis, feature_names, None)
+    untruthful_features = altruistino.find_untruthful_features(inst[0])
+    print(untruthful_features)
+################################################################################
 
 bot_name = "Robin"
 list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
@@ -91,7 +108,6 @@ for key in list_syn:
 for key, values in keywords.items():
     keywords_dict[key]=re.compile('|'.join(values))
 
-print(list_syn)
 def readBanknote(feature_names):
     print(f"{bot_name}: Okay! Fill in the following features\n")
     vars = [0] * len(feature_names)
@@ -233,11 +249,11 @@ while(True):
             elif 'shap' in user_input:
                 plotMethod(feature_names, fi_svm.fi_shap, vars, 'Shap', 'Feature Importance')
 
-            elif 'pi' in user_input:
+            elif ('pi' in user_input) or ('permutation importance' in user_input):
                 plotMethod(feature_names, fi_svm.fi_perm_imp, vars, 'PI', 'Feature Importance')
 
             else:
-                responses[phase]['no method']()
+                responses[phase]['noMethod']()
                 continue
 
         if yesOrNo("Do you want to go back"):
@@ -247,7 +263,11 @@ while(True):
             phase3Menu()
     elif phase == 'phase3':
         if matched == 'interpretation':
+            #######################################################################33
+            metaExplanation(X_svm, dataset_class, vars, feature_names, class_names)
+            ######################################################################
             print("Altruist plot")
+
         if matched == 'features':
             if 'lime' in user_input:
                 print('unthruthful lime')
@@ -261,12 +281,10 @@ while(True):
 
         elif matched == 'counterfactual':
             print('the counterfactuals is...')
-
         elif matched == 'previous':
             phase = 'phase2'
             phase2Menu();
             continue
-
         if yesOrNo('Do you want to go back'):
             phase3Menu()
         else:
