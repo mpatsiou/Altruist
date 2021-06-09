@@ -61,7 +61,6 @@ scalers[1] = scaler_svm
 X_svm = scalers[1].transform(dataset_values)
 fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
-#############################################################################3
 def metaExplanation(X_t, dataset_class, inst, feature_names, class_names):
     fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
     fi_names = {fi.fi_lime:'Lime',fi.fi_shap:'Shap',fi.fi_perm_imp:'Permuation Importance'}
@@ -71,11 +70,27 @@ def metaExplanation(X_t, dataset_class, inst, feature_names, class_names):
     for i in fis:
         fis_scores.append([])
 
-    print(inst)
     altruistino = Altruist(classifiers[1][0], X_t, fis, feature_names, None)
     untruthful_features = altruistino.find_untruthful_features(inst[0])
-    print(untruthful_features)
-################################################################################
+    return untruthful_features
+
+def counterfactuals(X_t, dataset_class, feature_names, class_names, untruthful_features):
+    fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
+
+    fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
+    min_un = 100000
+    min_pos = 0
+    for i in range(len(fis)):
+        if min_un > len(untruthful_features[0][i]):
+            min_un = len(untruthful_features[0][i])
+            min_pos = i
+
+    if not untruthful_features[1][min_pos]:
+        print(f'{bot_name}: There are no counterfactual!')
+        return
+
+    c = untruthful_features[1][min_pos][0]
+    print("The counterfactuals for the feature ", feature_names[c[0] - 1],'is', c[1])
 
 bot_name = "Robin"
 list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
@@ -139,13 +154,18 @@ def infoPI():
 def yesOrNo(question):
     print(f"{bot_name}: ",question)
     print('\tyes\n\tno')
-    user_input = input().lower()
-    if 'yes' in user_input:
-        return True
-    elif 'no' in user_input:
-        return False
-    else:
-        yesOrNo(question)
+
+    while(True):
+        user_input = input(f"{user_name}: ").lower()
+        if 'yes' in user_input:
+            return True
+
+        elif 'no' in user_input:
+            return False
+
+        print(f"{bot_name}: I'm a bot programmed to answer only some of the specific answers. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n")
+        continue
+
 
 def phase3Menu():
     print(f"{bot_name}: After that, I suggest you to use the Altruist. A new methodology that aims to tackle a few problems of feature importance-based aproaches.")
@@ -180,13 +200,15 @@ responses = {
         'noMethod': lambda: print(f"{bot_name}: Please give also a method")
     },
     'phase3': {
-        'noMethod': lambda: print(f"{bot_name}: Please give also a method")
+        'noMethod': lambda: print(f"{bot_name}: Please give also a method"),
+        'altruist' : metaExplanation,
+        'counterfactual': counterfactuals
 
     },
     'default': {
         'hello': lambda: print(f"{bot_name}: Hello! Time to predict some banknotes"),
         'quit': lambda: print(f"{bot_name}: Thank you for visiting!"),
-        'error': lambda: print(f"{bot_name}: I'm a bot programmed to answer only some of the frequent questions. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n")
+        'error': lambda: print(f"{bot_name}: I'm a bot programmed to answer only some of the specific answers. Here are the topics I can help you with.\nRobin: Select the topic or write your answer below\n")
     }
 }
 
@@ -260,31 +282,33 @@ while(True):
             phase2Menu()
         else:
             phase = "phase3"
+            untruthful_features = responses[phase]['altruist'](X_svm, dataset_class, vars, feature_names, class_names)
+            print(untruthful_features)
             phase3Menu()
+
     elif phase == 'phase3':
         if matched == 'interpretation':
-            #######################################################################33
-            metaExplanation(X_svm, dataset_class, vars, feature_names, class_names)
-            ######################################################################
             print("Altruist plot")
 
         if matched == 'features':
             if 'lime' in user_input:
-                print('unthruthful lime')
+                print("Untruthful features LIME: "+str(untruthful_features[0][0])+" ("+str(len(untruthful_features[0][0]))+")")
             elif 'shap' in user_input:
-                print('unthruthful shap')
+                print("Untruthful features Shap: "+str(untruthful_features[0][1])+" ("+str(len(untruthful_features[0][1]))+")")
             elif ('pi' in user_input) or ('permutation importance' in user_input):
-                print('unthruthful pi')
+                print("Untruthful features Permutation Importance: "+str(untruthful_features[0][2])+" ("+str(len(untruthful_features[0][2]))+")")
             else:
                 responses[phase]['noMethod']()
                 continue
 
         elif matched == 'counterfactual':
-            print('the counterfactuals is...')
+            responses[phase][matched](X_svm, dataset_class, feature_names, class_names, untruthful_features)
+
         elif matched == 'previous':
             phase = 'phase2'
             phase2Menu();
             continue
+
         if yesOrNo('Do you want to go back'):
             phase3Menu()
         else:
