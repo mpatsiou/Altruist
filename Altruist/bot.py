@@ -27,8 +27,8 @@ import ipywidgets as widgets
 
 banknote_datadset = pd.read_csv('https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv')
 feature_names = ['variance','skew','curtosis','entropy']
-class_names=['fake banknote','real banknote'] #0: no, 1: yes #or ['not authenticated banknote','authenticated banknote']
-
+class_names = ['fake banknote','real banknote'] #0: no, 1: yes #or ['not authenticated banknote','authenticated banknote']
+model_names = ['fi_lime', 'fi_shap', 'fi_perm_imp']
 # Saves the dataset_statistics for every feature
 dataset_statistics = {}
 for i in range (len(banknote_datadset.columns) - 1):
@@ -91,6 +91,26 @@ def counterfactuals(X_t, dataset_class, feature_names, class_names, untruthful_f
 
     c = untruthful_features[1][min_pos][0]
     print("The counterfactuals for the feature ", feature_names[c[0] - 1],'is', c[1])
+
+def varsAltruist(X_t, dataset_class, class_names,untruthful_features, feature_names, vars):
+    fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
+
+    fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
+    min_un = 100000
+    min_pos = 0
+    for i in range(len(fis)):
+        if min_un > len(untruthful_features[i]):
+            min_un = len(untruthful_features[i])
+            min_pos = i
+
+    altruistVars = [0] * len(feature_names)
+
+    for i in range(0, len(feature_names)):
+        if feature_names[i] in untruthful_features[min_pos]:
+            continue
+
+        altruistVars[i] = fis[min_pos](vars[0], "_", svm)[i]
+    print(altruistVars)
 
 bot_name = "Robin"
 list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
@@ -177,13 +197,13 @@ def phase3Menu():
 def infoAltruist():
     print(f"{bot_name}: Info of Altruist...")
 
-def plotMethod(feature_names, method, vars, title, yLabel):
+def plotMethod(feature_names, ar, title, yLabel):
     my_cmap = cm.get_cmap('Greens', 17)
     my_norm = Normalize(vmin = 0, vmax = 4)
 
     fig, axs = plt.subplots(1, 1, figsize = (10, 4.7), dpi = 150, sharex = True)
 
-    axs.bar(feature_names, method(vars[0], '_', svm),color=my_cmap(my_norm([1,2,3,4])))
+    axs.bar(feature_names, ar,color=my_cmap(my_norm([1,2,3,4])))
     axs.set_title(title)
     axs.set_ylabel(yLabel)
     plt.show()
@@ -266,13 +286,13 @@ while(True):
 
         elif matched == 'interpretation':
             if 'lime' in user_input:
-                plotMethod(feature_names, fi_svm.fi_lime, vars, 'LIME', 'Feature Importance')
+                plotMethod(feature_names, fi_svm.fi_lime(vars[0], "_", svm), 'LIME', 'Feature Importance')
 
             elif 'shap' in user_input:
-                plotMethod(feature_names, fi_svm.fi_shap, vars, 'Shap', 'Feature Importance')
+                plotMethod(feature_names, fi_svm.fi_shap(vars[0], "_", svm), 'Shap', 'Feature Importance')
 
             elif ('pi' in user_input) or ('permutation importance' in user_input):
-                plotMethod(feature_names, fi_svm.fi_perm_imp, vars, 'PI', 'Feature Importance')
+                plotMethod(feature_names, fi_svm.fi_perm_imp(vars[0], "_", svm), 'PI', 'Feature Importance')
 
             else:
                 responses[phase]['noMethod']()
@@ -288,6 +308,8 @@ while(True):
 
     elif phase == 'phase3':
         if matched == 'interpretation':
+            print(untruthful_features[0])
+            varsAltruist(X_svm, dataset_class, class_names, untruthful_features[0], feature_names, vars)
             print("Altruist plot")
 
         if matched == 'features':
