@@ -63,12 +63,7 @@ fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
 
 def metaExplanation(X_t, dataset_class, inst, feature_names, class_names):
     fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
-    fi_names = {fi.fi_lime:'Lime',fi.fi_shap:'Shap',fi.fi_perm_imp:'Permuation Importance'}
     fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
-
-    fis_scores = []
-    for i in fis:
-        fis_scores.append([])
 
     altruistino = Altruist(classifiers[1][0], X_t, fis, feature_names, None)
     untruthful_features = altruistino.find_untruthful_features(inst[0])
@@ -92,25 +87,30 @@ def counterfactuals(X_t, dataset_class, feature_names, class_names, untruthful_f
     c = untruthful_features[1][min_pos][0]
     print("The counterfactuals for the feature ", feature_names[c[0] - 1],'is', c[1])
 
-def varsAltruist(X_t, dataset_class, class_names,untruthful_features, feature_names, vars):
+def varsAltruist(X_t, dataset_class, class_names, untruthful_features, feature_names, vars):
     fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
 
     fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
     min_un = 100000
     min_pos = 0
+    min2_pos = 0
     for i in range(len(fis)):
-        if min_un > len(untruthful_features[i]):
+        if min_un >= len(untruthful_features[i]):
             min_un = len(untruthful_features[i])
+            min2_pos = min_pos
             min_pos = i
 
     altruistVars = [0] * len(feature_names)
 
     for i in range(0, len(feature_names)):
         if feature_names[i] in untruthful_features[min_pos]:
+            altruistVars[i] = fis[min2_pos](vars[0], "_", svm)[i]
             continue
 
         altruistVars[i] = fis[min_pos](vars[0], "_", svm)[i]
-    print(altruistVars)
+
+    plotMethod(feature_names, altruistVars, "Altruist", 'Feature Importance')
+
 
 bot_name = "Robin"
 list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
@@ -308,7 +308,6 @@ while(True):
 
     elif phase == 'phase3':
         if matched == 'interpretation':
-            print(untruthful_features[0])
             varsAltruist(X_svm, dataset_class, class_names, untruthful_features[0], feature_names, vars)
             print("Altruist plot")
 
@@ -334,5 +333,5 @@ while(True):
         if yesOrNo('Do you want to go back'):
             phase3Menu()
         else:
-            print('thats is bye')
+            print('thats it bye')
             break
