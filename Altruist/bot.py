@@ -25,23 +25,21 @@ from ipywidgets import interact, interactive, fixed, interact_manual
 import ipywidgets as widgets
 
 
-banknote_datadset = pd.read_csv('https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv')
-feature_names = ['variance','skew','curtosis','entropy']
+dataset = pd.read_csv('https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv')
 class_names = ['fake banknote','real banknote'] #0: no, 1: yes #or ['not authenticated banknote','authenticated banknote']
 model_names = ['fi_lime', 'fi_shap', 'fi_perm_imp']
+
 # Saves the dataset_statistics for every feature
 dataset_statistics = {}
-for i in range (len(banknote_datadset.columns) - 1):
-    feature = banknote_datadset.columns[i]
-    min = banknote_datadset.values[:,i].min()
-    max = banknote_datadset.values[:,i].max()
-    mean = banknote_datadset.values[:,i].mean()
-    dataset_statistics[feature] = [min, max, mean]
+feature_names = np.empty(len(dataset.columns) - 1, dtype=object)
+for i in range (len(dataset.columns) - 1):
+    feature = dataset.columns[i]
+    feature_names[i] = feature
+    dataset_statistics[feature] = [dataset.values[:,i].min(), dataset.values[:,i].max(), dataset.values[:,i].mean()]
 
 dataset_statistics_f = pd.DataFrame(data=dataset_statistics, index = ['min','max', 'mean'])
-
-dataset_values = banknote_datadset.iloc[:, 0:4].values
-dataset_class = banknote_datadset.iloc[:, 4].values
+dataset_values = dataset.iloc[:, 0:4].values
+dataset_class = dataset.iloc[:, 4].values
 
 # We will use MinMaxScaler scaler to normalize the input
 # and the SVM classifier
