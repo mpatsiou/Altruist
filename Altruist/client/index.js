@@ -1,32 +1,34 @@
-const msgerForm = get(".msger-inputarea");
-const msgerInput = get(".msger-input");
-const msgerChat = get(".msger-chat");
-
-const BOT_MSGS = [
-	"Hi, how are you?",
-	"Ohh... I can't understand what you trying to say. Sorry!",
-	"I like to play games... But I don't know how to play!",
-	"Sorry if my answers are not relevant. :))",
-	"I feel sleepy! :("
-];
+const form = get(".inputarea")
+const input = get(".forminput")
+const chat = get(".chat")
 
 // Icons made by Freepik from www.flaticon.com
-const BOT_IMG = "https://image.flaticon.com/icons/svg/327/327779.svg";
-const PERSON_IMG = "https://image.flaticon.com/icons/svg/145/145867.svg";
-const BOT_NAME = "Altruist Bot";
-const PERSON_NAME = "Anonymous";
+const BOT_IMG = "https://image.flaticon.com/icons/svg/327/327779.svg"
+const PERSON_IMG = "https://image.flaticon.com/icons/svg/145/145867.svg"
 
-msgerForm.addEventListener("submit", event => {
-	event.preventDefault();
+const BOT_NAME = "Altruist Bot"
+const PERSON_NAME = "Anonymous"
 
-	const msgText = msgerInput.value;
-	if (!msgText) return;
+hello()
 
-	appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText);
-	msgerInput.value = "";
+function botResponse(text) {
+	let response
 
-	botResponse();
-});
+	return answer('test')
+}
+
+form.addEventListener("submit", event => {
+	event.preventDefault()
+
+	const msgText = input.value
+	if (!msgText) return
+
+	appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText)
+	input.value = ""
+
+	text = botResponse(msgText)
+	answer(text)
+})
 
 function appendMessage(name, img, side, text) {
 	//   Simple solution for small apps
@@ -43,34 +45,39 @@ function appendMessage(name, img, side, text) {
 			<div class="msg-text">${text}</div>
 		</div>
 		</div>
-	`;
+	`
 
-	msgerChat.insertAdjacentHTML("beforeend", msgHTML);
-	msgerChat.scrollTop += 500;
+	chat.insertAdjacentHTML("beforeend", msgHTML)
+	chat.scrollTop += 500
 }
 
-function botResponse() {
-	const r = random(0, BOT_MSGS.length - 1);
-	const msgText = BOT_MSGS[r];
-	const delay = msgText.split(" ").length * 100;
-
+function answer(text) {
+	const delay = text.split(" ").length * 100
 	setTimeout(() => {
-			appendMessage(BOT_NAME, BOT_IMG, "left", msgText);
-	}, delay);
+			appendMessage(BOT_NAME, BOT_IMG, "left", text)
+	}, delay)
+}
+
+function hello() {
+	const text = `My name is ${BOT_NAME}.
+		Let me know if you have any questions regarding our tool!
+		What's your name?`
+
+	answer(text)
 }
 
 // Utils
 function get(selector, root = document) {
-  return root.querySelector(selector);
+  return root.querySelector(selector)
 }
 
 function formatDate(date) {
-	const h = "0" + date.getHours();
-	const m = "0" + date.getMinutes();
+	const h = "0" + date.getHours()
+	const m = "0" + date.getMinutes()
 
-	return `${h.slice(-2)}:${m.slice(-2)}`;
+	return `${h.slice(-2)}:${m.slice(-2)}`
 }
 
 function random(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+  return Math.floor(Math.random() * (max - min) + min)
 }
