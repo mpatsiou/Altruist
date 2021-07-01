@@ -1,69 +1,31 @@
 import re
-from nltk.corpus import wordnet
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
-from altruist import Altruist
-from fi_techniques import FeatureImportance
-
-import matplotlib.cm as cm
-from matplotlib.colors import Normalize
-
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import urllib
-import networkx as nx
+
+from matplotlib.colors import Normalize
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from ipywidgets import interact, interactive, fixed, interact_manual
-import ipywidgets as widgets
 
+from nltk.corpus import wordnet
 
-dataset = pd.read_csv('https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv')
-class_names = ['fake banknote','real banknote'] #0: no, 1: yes #or ['not authenticated banknote','authenticated banknote']
-model_names = ['fi_lime', 'fi_shap', 'fi_perm_imp']
+from altruist import Altruist
+from fi_techniques import FeatureImportance
+import model_svm
 
-# Saves the dataset_statistics for every feature
-dataset_statistics = {}
-feature_names = np.empty(len(dataset.columns) - 1, dtype=object)
-for i in range (len(dataset.columns) - 1):
-    feature = dataset.columns[i]
-    feature_names[i] = feature
-    dataset_statistics[feature] = [dataset.values[:,i].min(), dataset.values[:,i].max(), dataset.values[:,i].mean()]
+MODEL_NAMES = ['fi_lime', 'fi_shap', 'fi_perm_imp']
+CLASS_NAMES = ['fake_banknote', 'real_banknote']
 
-dataset_statistics_f = pd.DataFrame(data=dataset_statistics, index = ['min','max', 'mean'])
-dataset_values = dataset.iloc[:, 0:4].values
-dataset_class = dataset.iloc[:, 4].values
-
-# We will use MinMaxScaler scaler to normalize the input
-# and the SVM classifier
-scaler = MinMaxScaler(feature_range=(-1,1))
-classifiers = {}
-scalers = {}
-
-pipe = Pipeline(steps=[('scaler', scaler), ('svm', SVC(probability=True,random_state=77))])
-parameters = {'svm__C': [100], 'svm__gamma': [0.1], 'svm__kernel': ['rbf']} #best
-clf = GridSearchCV(pipe, parameters, scoring='f1', cv=10, n_jobs=-1)
-clf.fit(dataset_values, dataset_class)
-scaler_svm = clf.best_estimator_.steps[0][1]
-svm = clf.best_estimator_.steps[1][1]
-classifiers[1] = [svm, str("SVM: " + str(clf.best_score_))]
-scalers[1] = scaler_svm
-
-X_svm = scalers[1].transform(dataset_values)
-fi_svm = FeatureImportance(X_svm, dataset_class, feature_names, class_names)
+dataset = model_svm.get_dataset()
+dataset_statistics = model_svm.get_dataset_stats(dataset)
+feature_names = model_svm.get_feature_names(dataset)
+svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
+_, target = model_svm.split_for_target(dataset) 
 
 def metaExplanation(X_t, dataset_class, inst, feature_names, class_names):
     fi = FeatureImportance(X_t, dataset_class, feature_names, class_names)
     fis = [fi.fi_lime, fi.fi_shap, fi.fi_perm_imp]
 
-    altruistino = Altruist(classifiers[1][0], X_t, fis, feature_names, None)
+    altruistino = Altruist(svm, X_t, fis, feature_names, None)
     untruthful_features = altruistino.find_untruthful_features(inst[0])
     return untruthful_features
 
@@ -142,6 +104,7 @@ for key, values in keywords.items():
     keywords_dict[key]=re.compile('|'.join(values))
 
 def readBanknote(feature_names):
+    print('feature_names', feature_names)
     print(f"{bot_name}: Okay! Fill in the following features\n")
     vars = [0] * len(feature_names)
     for i in range(len(feature_names)):
@@ -149,11 +112,13 @@ def readBanknote(feature_names):
         vars[i] = float(v)
 
     vars = [np.array(vars)]
-    vars = scaler_svm.transform(vars)
+    print('vars[0] size', vars[0].size)
+    print('vars inside banknote', vars)
+    vars = scaler.transform(vars)
     return vars
 
 def prediction(vars):
-    print(f"{bot_name}: The prediction is that is a ", class_names[svm.predict(vars)[0]], '\n')
+    print(f"{bot_name}: The prediction is that is a ", CLASS_NAMES[svm.predict(vars)[0]], '\n')
 
 def phase2Menu():
     print(f"{bot_name}: Νow you can see the interpretation of some models, as well as the informations about them")
@@ -300,13 +265,13 @@ while(True):
             phase2Menu()
         else:
             phase = "phase3"
-            untruthful_features = responses[phase]['altruist'](X_svm, dataset_class, vars, feature_names, class_names)
+            untruthful_features = responses[phase]['altruist'](X_svm, target, vars, feature_names, CLASS_NAMES)
             print(untruthful_features)
             phase3Menu()
 
     elif phase == 'phase3':
         if matched == 'interpretation':
-            varsAltruist(X_svm, dataset_class, class_names, untruthful_features[0], feature_names, vars)
+            varsAltruist(X_svm, target, CLASS_NAMES, untruthful_features[0], feature_names, vars)
             print("Altruist plot")
 
         if matched == 'features':
@@ -321,7 +286,7 @@ while(True):
                 continue
 
         elif matched == 'counterfactual':
-            responses[phase][matched](X_svm, dataset_class, feature_names, class_names, untruthful_features)
+            responses[phase][matched](X_svm, target, feature_names, CLASS_NAMES, untruthful_features)
 
         elif matched == 'previous':
             phase = 'phase2'
