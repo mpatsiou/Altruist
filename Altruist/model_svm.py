@@ -33,7 +33,7 @@ def get_dataset_stats(dataset):
 
 def split_for_target(dataset):
 	l = len(dataset.columns) - 1
-	values = dataset.iloc[:, :l].values
+	values = dataset.iloc[:, :(l)].values
 	target = dataset.iloc[:, l].values
 
 	return values, target

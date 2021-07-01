@@ -112,8 +112,6 @@ def readBanknote(feature_names):
         vars[i] = float(v)
 
     vars = [np.array(vars)]
-    print('vars[0] size', vars[0].size)
-    print('vars inside banknote', vars)
     vars = scaler.transform(vars)
     return vars
 
