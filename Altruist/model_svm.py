@@ -29,7 +29,7 @@ def get_dataset_stats(dataset):
 			"mean": values.mean()
 		}
 
-	return stats 
+	return stats
 
 def split_for_target(dataset):
 	l = len(dataset.columns) - 1
@@ -64,9 +64,3 @@ def svm_train(dataset):
 	feature_importance = FeatureImportance(scaled_values, target, features, CLASS_NAMES)
 
 	return svm, scaler, scaled_values, feature_importance
-
-dataset = get_dataset()
-stats = get_dataset_stats(dataset)
-values, target = split_for_target(dataset)
-print(values)
-print(target)
