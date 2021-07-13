@@ -2,12 +2,8 @@ const form = get(".inputarea")
 const input = get(".forminput")
 const chat = get(".chat")
 
-// Icons made by Freepik from www.flaticon.com
-const BOT_IMG = "https://image.flaticon.com/icons/svg/327/327779.svg"
-const PERSON_IMG = "https://image.flaticon.com/icons/svg/145/145867.svg"
-
 const BOT_NAME = "Altruist Bot"
-const PERSON_NAME = "Anonymous"
+let person_name = "Anonymous"
 
 hello()
 
@@ -23,18 +19,18 @@ form.addEventListener("submit", event => {
 	const msgText = input.value
 	if (!msgText) return
 
-	appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText)
+	appendMessage(person_name, "right", msgText)
 	input.value = ""
 
 	text = botResponse(msgText)
 	answer(text)
 })
 
-function appendMessage(name, img, side, text) {
+function appendMessage(name, side, text) {
 	//   Simple solution for small apps
 	const msgHTML = `
 		<div class="msg ${side}-msg">
-		<div class="msg-img" style="background-image: url(${img})"></div>
+		<div class="msg-img"></div>
 
 		<div class="msg-bubble">
 			<div class="msg-info">
@@ -54,7 +50,7 @@ function appendMessage(name, img, side, text) {
 function answer(text) {
 	const delay = text.split(" ").length * 100
 	setTimeout(() => {
-			appendMessage(BOT_NAME, BOT_IMG, "left", text)
+			appendMessage(BOT_NAME, "left", text)
 	}, delay)
 }
 
