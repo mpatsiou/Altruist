@@ -332,6 +332,7 @@ responses = {
 list_words = ['yes', 'no', 'bye', 'hello', 'informations', 'interpretation', 'features', 'counterfactual', 'previous']
 keywords_dict, keywords = getSynonyms(list_words)
 
+"""
 user_name = input(f"\n\nHi​! My name is Robin. Let me know if you have any questions regarding our tool!\nWhat's your name?\n")
 print(f"Robin: Hello {user_name}\nAre you ready to predict some banknotes?\n1)yes I am ready!\n2)no bye.")
 
@@ -364,6 +365,7 @@ print("5 ->",getResponse('phase3', 'yes', aux))
 print("i want to see the counterfactual")
 print("6 ->",getResponse('phase3', 'I want to see the counterfactual', aux))
 
+"""
 # while(True):
 #     user_input = input(f"{user_name}: ").lower()
 #
