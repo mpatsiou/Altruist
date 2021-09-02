@@ -5,26 +5,22 @@ const chat = get(".chat")
 const BOT_NAME = "Altruist Bot"
 let person_name = "Anonymous"
 
+const URL = 'http://localhost:3000'
+
+const storage = window.localStorage
+storage.setItem('phase', 'phase1')
+
 hello()
 
-function botResponse(text) {
-	let response
+async function askBot(userInput, aux, phase) {
+	const response = await axios.post(URL + '/ask', {
+		user_input: userInput,
+		aux,
+		phase
+	})
 
-	return answer('test')
+	return response.data
 }
-
-form.addEventListener("submit", event => {
-	event.preventDefault()
-
-	const msgText = input.value
-	if (!msgText) return
-
-	appendMessage(person_name, "right", msgText)
-	input.value = ""
-
-	text = botResponse(msgText)
-	answer(text)
-})
 
 function appendMessage(name, side, text) {
 	//   Simple solution for small apps
@@ -38,7 +34,7 @@ function appendMessage(name, side, text) {
 			<div class="msg-info-time">${formatDate(new Date())}</div>
 			</div>
 
-			<div class="msg-text">${text}</div>
+			<div class="msg-text"><p>${text.split('\n').join('</p><p>')}</p></div>
 		</div>
 		</div>
 	`
@@ -48,10 +44,10 @@ function appendMessage(name, side, text) {
 }
 
 function answer(text) {
-	const delay = text.split(" ").length * 100
-	setTimeout(() => {
-			appendMessage(BOT_NAME, "left", text)
-	}, delay)
+	// const delay = text.split(" ").length * 100
+	//setTimeout(() => {
+	appendMessage(BOT_NAME, "left", text)
+	//}, delay)
 }
 
 function hello() {
@@ -77,3 +73,24 @@ function formatDate(date) {
 function random(min, max) {
   return Math.floor(Math.random() * (max - min) + min)
 }
+
+form.addEventListener("submit", async (event) => {
+	event.preventDefault()
+
+	const msgText = input.value
+	if (!msgText) return
+
+	appendMessage(person_name, "right", msgText)
+	input.value = ""
+
+	const phase = storage.getItem('phase')
+	const response = await askBot(msgText, {}, phase)
+
+	storage.setItem('phase', response.phase ? response.phase : storage.getItem('phase')) 
+	answer(response.answer)
+
+	if ('next_question' in response) {
+		console.log(response.next_question)
+		answer(response.next_question)
+	}
+})

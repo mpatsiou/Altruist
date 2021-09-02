@@ -69,16 +69,15 @@ def prediction(vars):
     return "The prediction is that is a " + CLASS_NAMES[svm.predict(vars)[0]]
 
 def phase2Menu():
-    intro = "Now you can see the interpretation of some models, as well as the informations about them."
-    choice1 = "1)informations about LIME"
-    choice2 = "2)informations about Shap"
-    choice3 = "3)informations about Permutation Importance(PI)"
-    choice4 = "4)interpretation of LIME"
-    choice5 = "5)interpretation of Shap"
-    choice6 = "6)interpretation of Permutation Importance(PI)"
-
-    menu = intro + choice1 + choice2 + choice3 + choice4 + choice5 + choice6
-    return menu
+    return """
+        Now you can see the interpretation of some models, as well as the information about them."
+        1)information about LIME
+        2)information about Shap
+        3)information about Permutation Importance(PI)
+        4)interpretation of LIME
+        5)interpretation of Shap
+        6)interpretation of Permutation Importance(PI)
+        """
 
 def infoLime():
     return "Info of LIME"
