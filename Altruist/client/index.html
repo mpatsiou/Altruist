@@ -2,6 +2,8 @@
 	<head>
 		<link rel="stylesheet" href="style/index.css">
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
+		<script src="https://cdn.plot.ly/plotly-2.4.2.min.js"></script>
 	</head>
 	<body>
 		<section class="msger">
@@ -10,17 +12,18 @@
 					<i class="fas fa-comment-alt"></i> Altruist Bot
 				</div>
 			</header>
-		
+
 			<main class="chat">
 			</main>
-		
+
 			<form class="inputarea">
 				<input type="text" class="forminput" placeholder="Enter your message...">
 				<button type="submit" class="sendbutton">Send</button>
 			</form>
 		</section>
 
-		<script src='js/request.js'></script>
+		<script src='js/storage.js'></script>
+		<script src='js/flowchart/index.js'></script>
 		<script src='js/index.js'></script>
 	</body>
 </html>
