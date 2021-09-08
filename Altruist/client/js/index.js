@@ -3,26 +3,24 @@ const input = get(".forminput")
 const chat = get(".chat")
 
 const BOT_NAME = "Altruist Bot"
-let person_name = "Anonymous"
 
-const URL = 'http://localhost:3000'
+async function init() {
+	//The first phase of the chat flow
+	const firstPhase  = flow['name']
 
-const storage = window.localStorage
-storage.setItem('phase', 'phase1')
+	storeLocally('phaseID', 'name')
+	storeLocally('name', 'Username')
 
-hello()
-
-async function askBot(userInput, aux, phase) {
-	const response = await axios.post(URL + '/ask', {
-		user_input: userInput,
-		aux,
-		phase
-	})
-
-	return response.data
+	const text = firstPhase.question()
+	answer(text)
 }
 
-function appendMessage(name, side, text) {
+function appendMessage(name, side, text, phaseID) {
+	//If the text is not an image then use <p>
+	if (!text.includes('img')) {
+		text = `<p>${text.split('\n').join('</p><p>')}</p>`
+	}
+
 	//   Simple solution for small apps
 	const msgHTML = `
 		<div class="msg ${side}-msg">
@@ -34,7 +32,7 @@ function appendMessage(name, side, text) {
 			<div class="msg-info-time">${formatDate(new Date())}</div>
 			</div>
 
-			<div class="msg-text"><p>${text.split('\n').join('</p><p>')}</p></div>
+			<div class="msg-text" id="${phaseID}">${text}</div>
 		</div>
 		</div>
 	`
@@ -43,20 +41,14 @@ function appendMessage(name, side, text) {
 	chat.scrollTop += 500
 }
 
+//Function that append a Bot's message
 function answer(text) {
 	// const delay = text.split(" ").length * 100
 	//setTimeout(() => {
-	appendMessage(BOT_NAME, "left", text)
+	appendMessage(BOT_NAME, "left", text, "bot")
 	//}, delay)
 }
 
-function hello() {
-	const text = `My name is ${BOT_NAME}.
-		Let me know if you have any questions regarding our tool!
-		What's your name?`
-
-	answer(text)
-}
 
 // Utils
 function get(selector, root = document) {
@@ -80,17 +72,33 @@ form.addEventListener("submit", async (event) => {
 	const msgText = input.value
 	if (!msgText) return
 
-	appendMessage(person_name, "right", msgText)
-	input.value = ""
+	const name = fetchFromStorage('name')
+	const phaseID = fetchFromStorage('phaseID')
+	const oldPhase = flow[phaseID]
 
-	const phase = storage.getItem('phase')
-	const response = await askBot(msgText, {}, phase)
+	//Append user's message
+	appendMessage(name, "right", msgText, phaseID)
+	input.value = ''
 
-	storage.setItem('phase', response.phase ? response.phase : storage.getItem('phase')) 
-	answer(response.answer)
+	//Answer to user
+	result = await oldPhase.handler(msgText)
+	console.log(oldPhase);
+	//For testing
+	console.log(`For phase: ${phaseID}`, `handling`, msgText)
+	console.log(`Result:`, result)
+	answer(result.answer)
 
-	if ('next_question' in response) {
-		console.log(response.next_question)
-		answer(response.next_question)
+	if (typeof result.next != "undefined") {
+		storeLocally('phaseID', result.next)
+		const newPhase = flow[result.next]
+
+		const question = await newPhase.question()
+		answer(question)
 	}
+	else {
+		answer("Bye Bye!")
+	}
+
 })
+
+init()
