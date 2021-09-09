@@ -25,18 +25,36 @@ const flow = {
         question: askGoBack2,
         handler: handleGoBack2
     },
-    // 'new_prediction': {
-    //     question: askNewPrediction,
-    //     handle: handlerNewPrediction
-    // }
+    'done': {
+        question: askDone,
+        handler: handleDone
+    }
+}
+
+function askDone() {
+    return "Wanna enter new features?"
+}
+
+function handleDone(answer) {
+    if (answer.startsWith('y')) {
+        return {
+            answer: "Let's go!",
+            next: 'prediction'
+        }
+    }
+
+    return {
+        answer: "See yuh around!",
+        next: null
+    }
 }
 
 function askName() {
-    return "Hellow, what's your name?"
+    return "Hello, what's your name?"
 }
 
 async function handleName(name) {
-    storeLocally('name', name) //giati den bazw kai prwti parametro
+    storeLocally('name', name)
 
     return {
         answer: "Nice to meet you! Let's make some prediction.",
@@ -48,7 +66,7 @@ async function askPrediction() {
     const featureNames = await request('get', '/features_names')
     storeLocally('featureNames', featureNames)
 
-    const parsedFeatures = featureNames.map(s => "* " + s).join('\n') //na dw to map(s => "* ") kai join
+    const parsedFeatures = featureNames.map(s => "* " + s).join('\n')
     console.log("parsedFeatures\n", parsedFeatures);
     console.log("featureNames", featureNames)
 
@@ -56,7 +74,7 @@ async function askPrediction() {
 }
 
 async function handlePrediction(featureValues) {
-    const values = featureValues.split(' ').map(Number) //na dw map genika kai me Number
+    const values = featureValues.split(' ').map(Number)
     const features = {}
 
     if (values.length != fetchFromStorage('featureNames').length) {
@@ -105,7 +123,7 @@ function handleGoBack(answer) {
     return { answer: "Incomprehensible answer!", next: 'go_back' }
 }
 
-async function askDetails() {  //giati einai async kai ti einai genika
+async function askDetails() {
     return `
 	Now you can see the interpretation of some models, as well as the information about them.
 	1)information about LIME
@@ -122,7 +140,7 @@ async function handleDetails(answer) {
     // var {synonyms} =  require("synonyms")
     // synonyms('information', "n")
     // console.log(synonyms.prediction)
-    //na diavasw ksana fuse kai pws to xrisimopoiw
+
     const fuse = new Fuse(options, {includeScore: true})
     const result = fuse.search(answer)[0]
 
@@ -149,17 +167,19 @@ async function handleDetails(answer) {
         //Interpret cases
         const [_, fi_method] = result.item.split('_')
         const features = fetchFromStorage('features')
-        const values = Object.values(features).join(',') //ti einai to Object.values
-
-        var img = document.createElement('img')
-        img.src = "../images/LIME.png"
-        console.log(img);
-
-
-
+        const values = Object.values(features).join(',')
 
         const fi = await request('get', `/feature_importance?method=${fi_method}&values=${values}`)
-        text = img
+        const featureNames = fetchFromStorage('featureNames')
+        const barplotData = zipObject(featureNames, fi)
+
+        const plot = generateBarplot(fi_method, barplotData)
+
+        var img = document.createElement('img')
+        img.src = plot
+        img.style="width: 100%; height: 500px;"
+
+        text = img.outerHTML
     }
 
     return {
@@ -200,8 +220,8 @@ async function handlerAlruist(answer) {
     let next = 'go_back2'
     const features = fetchFromStorage('features')
     const values = Object.values(features).join(',')
-    const untruthful_features = await request('get', `/altruist?values=${values}`)
-    storeLocally("untruthful_features", untruthful_features)
+    const explanation = await request('get', `/altruist?values=${values}`)
+    const [untruthful, counterfactuals] = explanation
 
     let fi_method = ''
 
@@ -216,27 +236,26 @@ async function handlerAlruist(answer) {
             break;
         case 'untruthful_features_lime':
             fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful_features[0][0] + " (" + untruthful_features[0][0].length + ")"
+            text = "Untruthful features of " + fi_method + " : " + untruthful[0] + " (" + untruthful[0].length + ")"
             break;
         case 'untruthful_features_shap':
             fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful_features[0][1] + " (" + untruthful_features[0][1].length + ")"
+            text = "Untruthful features of " + fi_method + " : " + untruthful[1] + " (" + untruthful[1].length + ")"
             break;
         case 'untruthful_features_pi':
             fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful_features[0][2] + " (" + untruthful_features[0][2].length + ")"
+            text = "Untruthful features of " + fi_method + " : " + untruthful[2] + " (" + untruthful[2].length + ")"
             break;
         case 'counterfactuals':
-            // const bodyFormData = new FormData()
-            //
-            // untruthful_features.forEach((item) => {
-            //     bodyFormData.append('untruthful_features[]', item)
-            // });
-            //
-            // console.log("UNTRUTHFUL FEATURES: ", untruthful_features);
-            // console.log("BODY FORM DATA:", bodyFormData);
-            // const res = await request('post', '/counterfactuals', bodyFormData)
-            text = 'counterfactuals'
+            const lengths = untruthful.map(l => l.length)
+            const featureNames = fetchFromStorage("featureNames")
+
+            const minIdx = lengths.indexOf(Math.min(...lengths))
+            const counterfactualFeature = featureNames[counterfactuals[minIdx][0][0] - 1]
+
+            text = minIdx > -1 ?
+                'The counterfactuals for the feature: ' + counterfactualFeature + " is " + counterfactuals[minIdx][0][1] :
+                'No counterfactuals'
             break;
         case 'previous_phase':
             text = "previous phase"
@@ -244,8 +263,6 @@ async function handlerAlruist(answer) {
            break;
         default:
             text = 'testing'
-
-
     }
     return {
         answer: `You chose: ${result.item}\n${text}`,
@@ -254,21 +271,21 @@ async function handlerAlruist(answer) {
 }
 
 function askGoBack2() {
-    return "Do you want to go back2?"
+    return "Do you want to go back?"
 }
 
 function handleGoBack2(answer) {
     answer = answer.toLowerCase()
     if (answer == 'yes' || answer == 'y') {
         return {
-            answer: "Going back2!",
+            answer: "Going back!",
             next: 'altruist'
         }
     }
     else if (answer == 'no' || answer == 'n') {
         return {
             answer: "Alright!",
-            next: 'new_prediction'
+            next: 'done'
         }
     }
 
@@ -279,4 +296,50 @@ function handleGoBack2(answer) {
 async function request(method, endpoint, data = null) {
     const response = await axios[method](URL + endpoint, data)
     return response.data
+}
+
+
+// data: {'variance': 0.2, 'cyrtosis': -0.12, ..}
+const generateBarplot = (title, data) => {
+    const dataPoints = []
+    for (const key in data) {
+        dataPoints.push({ label: key, y: data[key] })
+    }
+
+    const div = document.createElement('div')
+    div.id = "chart_hidden"
+    div.style="width: 0%; height: 0; position: fixed;"
+    document.body.appendChild(div);
+
+    const chart = new CanvasJS.Chart("chart_hidden", {
+        animationEnabled: false,
+        theme: "light2",
+        title: {
+            text: title
+        },
+        data: [{
+            type: "column",
+            showInLegend: true,
+            legendMarkerColor: "grey",
+            dataPoints: dataPoints
+        }]
+    });
+
+    chart.render()
+    const base64Image = chart.canvas.toDataURL();
+
+    const elem = document.getElementById("chart_hidden");
+    elem.remove();
+
+    return base64Image
+}
+
+function zipObject(keys, values) {
+    const obj = {};
+
+    keys.forEach((key, index) => {
+      obj[key] = values[index];
+    })
+
+    return obj;
 }
