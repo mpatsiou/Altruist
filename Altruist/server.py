@@ -22,19 +22,6 @@ CLASS_NAMES = ['fake banknote', 'real banknote']
 app = Flask(__name__)
 CORS(app)
 
-# @app.route("/ask", methods=['POST'])
-# def ask():
-#     content = request.get_json()
-#     print(content)
-#
-#     for input in ['phase', 'user_input', 'aux']:
-#         if input not in content:
-#             return input + ' not in request body', 400
-#
-#     response = getResponse(content['phase'], content['user_input'], content['aux'])
-#
-#     return response
-
 @app.route("/features_names", methods=['GET'])
 def get_feature_names():
     return jsonify(features_names)
@@ -94,17 +81,7 @@ def get_metaExplanation():
     fi_method_list = list(fis.values())
     altruistino = Altruist(svm, X_svm, fi_method_list, features_names, None)
     untruthful_features = altruistino.find_untruthful_features(values[0])
-    print("--------------UNTRITHFUL FEATURES-----------", untruthful_features[1])
     return jsonify(untruthful_features)
-
-# @app.route("/counterfactuals", methods=['POST'])
-# def get_counterfactuals():
-#     untruthful_features = request.get_json()
-#
-#     min_un = 100000
-#     min_pos = 0
-#     print("___________________", untruthful_features, " ___________________")
-
 
 @app.route("/", methods=['GET'])
 def hello():
