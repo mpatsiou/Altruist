@@ -21,7 +21,7 @@ function appendMessage(name, side, text, phaseID) {
 		text = `<p>${text.split('\n').join('</p><p>')}</p>`
 	}
 
-	//Simple solution for small apps
+	//   Simple solution for small apps
 	const msgHTML = `
 		<div class="msg ${side}-msg">
 		<div class="msg-img"></div>
@@ -50,7 +50,7 @@ function answer(text) {
 }
 
 
-//Utils
+// Utils
 function get(selector, root = document) {
   return root.querySelector(selector)
 }
@@ -76,6 +76,7 @@ form.addEventListener("submit", async (event) => {
 	const phaseID = fetchFromStorage('phaseID')
 	const oldPhase = flow[phaseID]
 
+	console.log(phaseID, oldPhase)
 
 	//Append user's message
 	appendMessage(name, "right", msgText, phaseID)
@@ -83,7 +84,7 @@ form.addEventListener("submit", async (event) => {
 
 	//Answer to user
 	result = await oldPhase.handler(msgText)
-	
+	console.log(oldPhase);
 	//For testing
 	console.log(`For phase: ${phaseID}`, `handling`, msgText)
 	console.log(`Result:`, result)
