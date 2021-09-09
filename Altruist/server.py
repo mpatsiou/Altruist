@@ -1,15 +1,27 @@
-from model_svm import get_feature_names, get_dataset, get_dataset_stats, svm_train, split_for_target
 from flask import Flask, json, request, jsonify
 from flask_cors import CORS
-import model_svm
+
 import numpy as np
 from altruist import Altruist
 
+####TO RUN THE BANKNOT DATASET COMMENT OUT THE FOLLOWING####
+import model_svm
 dataset = model_svm.get_dataset()
 dataset_statistics = model_svm.get_dataset_stats(dataset)
 features_names = model_svm.get_feature_names(dataset)
 svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
 _, target = model_svm.split_for_target(dataset)
+
+
+### TO RUN THE HEART DATASET COMMENT OUT THE FOLLOWING
+# import model_svm_heart as model_svm
+#
+# features_names = model_svm.get_feature_names()
+# values, target = model_svm.split_for_target()
+# print(values[0])
+# dataset = model_svm.get_dataset(values, features_names)
+# stats = model_svm.get_dataset_stats(dataset)
+# svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
 
 fis = {
     'lime': fi_svm.fi_lime,
@@ -17,7 +29,7 @@ fis = {
     'pi': fi_svm.fi_perm_imp
 }
 
-CLASS_NAMES = ['fake banknote', 'real banknote']
+CLASS_NAMES = model_svm.get_class_names()
 
 app = Flask(__name__)
 CORS(app)
@@ -59,7 +71,7 @@ def get_feature_importance():
     values = list(map(int, values.split(',')))
     values = [np.array(values)]
     values = scaler.transform(values)
-    feature_importance = fis[method](values[0], _, svm)
+    feature_importance = fis[method](values[0], "_", svm)
 
     #Shap and PI do not return a list
     if not isinstance(feature_importance, list):
