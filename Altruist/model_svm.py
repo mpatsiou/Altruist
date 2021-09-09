@@ -9,6 +9,9 @@ from fi_techniques import FeatureImportance
 DATASET_URL = 'https://raw.githubusercontent.com/Kuntal-G/Machine-Learning/master/R-machine-learning/data/banknote-authentication.csv'
 CLASS_NAMES = ['fake_banknote', 'real_banknote']
 
+def get_class_names():
+	return CLASS_NAMES
+
 def get_dataset(url = DATASET_URL):
 	return pd.read_csv(url)
 
