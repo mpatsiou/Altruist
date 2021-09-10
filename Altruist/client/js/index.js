@@ -10,6 +10,7 @@ async function init() {
 
 	storeLocally('phaseID', 'name')
 	storeLocally('name', 'Username')
+	storeLocally('fis', ["lime", "shap", "pi"])
 
 	const text = firstPhase.question()
 	answer(text)
