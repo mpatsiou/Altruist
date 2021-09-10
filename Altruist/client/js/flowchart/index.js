@@ -70,7 +70,7 @@ async function askPrediction() {
     console.log("parsedFeatures\n", parsedFeatures);
     console.log("featuresNames", featuresNames)
 
-    return "Fill in the following features:\n" + parsedFeatures
+    return "Fill in the following features. Please give me the features separated with space (eg. 0 0 0 0).:\n" + parsedFeatures
 }
 
 async function handlePrediction(featureValues) {
@@ -233,7 +233,7 @@ async function handlerAlruist(answer) {
             var lengths = untruthful.map(l => l.length)
 
             const [min1, min2] = getIdxOfTwoMinimun(lengths)
-            const techniques = fetchFromStorage("fis")
+            const techniques = await request('get', '/fis') 
             const valuesTechnique1 = await request('get', `/feature_importance?method=${techniques[min1]}&values=${values}`)
             const valuesTechnique2 = await request('get', `/feature_importance?method=${techniques[min2]}&values=${values}`)
 

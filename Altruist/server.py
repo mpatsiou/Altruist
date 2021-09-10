@@ -34,6 +34,10 @@ CLASS_NAMES = model_svm.get_class_names()
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/fis", methods=['GET'])
+def get_fis():
+    return jsonify(fi)
+
 @app.route("/features_names", methods=['GET'])
 def get_feature_names():
     return jsonify(features_names)
