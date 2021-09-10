@@ -63,12 +63,12 @@ async function handleName(name) {
 }
 
 async function askPrediction() {
-    const featureNames = await request('get', '/features_names')
-    storeLocally('featureNames', featureNames)
+    const featuresNames = await request('get', '/features_names')
+    storeLocally('featuresNames', featuresNames)
 
-    const parsedFeatures = featureNames.map(s => "* " + s).join('\n')
+    const parsedFeatures = featuresNames.map(s => "* " + s).join('\n')
     console.log("parsedFeatures\n", parsedFeatures);
-    console.log("featureNames", featureNames)
+    console.log("featuresNames", featuresNames)
 
     return "Fill in the following features:\n" + parsedFeatures
 }
@@ -77,7 +77,7 @@ async function handlePrediction(featureValues) {
     const values = featureValues.split(' ').map(Number)
     const features = {}
 
-    if (values.length != fetchFromStorage('featureNames').length) {
+    if (values.length != fetchFromStorage('featuresNames').length) {
         return {
             answer: "Please give correct feature values",
             next: "prediction"
@@ -86,7 +86,7 @@ async function handlePrediction(featureValues) {
     }
 
     i = 0
-    for (const name of fetchFromStorage('featureNames')) {
+    for (const name of fetchFromStorage('featuresNames')) {
         console.log('Feature name', name, values[i]);
         features[name] = values[i]
         ++i
@@ -107,13 +107,14 @@ function askGoBack() {
 
 function handleGoBack(answer) {
     answer = answer.toLowerCase()
-    if (answer == 'yes' || answer == 'y') {
+
+    if (answer.startsWith('y')) {
         return {
             answer: "Going back!",
             next: 'details'
         }
     }
-    else if (answer == 'no' || answer == 'n') {
+    else if (answer.startsWith('n')) {
         return {
             answer: "Alright!",
             next: 'altruist'
@@ -137,9 +138,6 @@ async function askDetails() {
 
 async function handleDetails(answer) {
     const options = ['info_lime', 'info_shap', 'info_pi', 'interpret_lime', 'interpret_shap', 'interpret_pi']
-    // var {synonyms} =  require("synonyms")
-    // synonyms('information', "n")
-    // console.log(synonyms.prediction)
 
     const fuse = new Fuse(options, {includeScore: true})
     const result = fuse.search(answer)[0]
@@ -164,22 +162,22 @@ async function handleDetails(answer) {
             text = "info about pi.."
             break
         default:
-        //Interpret cases
-        const [_, fi_method] = result.item.split('_')
-        const features = fetchFromStorage('features')
-        const values = Object.values(features).join(',')
+            //Interpretation cases
+            const [_, fi_method] = result.item.split('_')
+            const features = fetchFromStorage('features')
+            const values = Object.values(features).join(',')
 
-        const fi = await request('get', `/feature_importance?method=${fi_method}&values=${values}`)
-        const featureNames = fetchFromStorage('featureNames')
-        const barplotData = zipObject(featureNames, fi)
+            const fi = await request('get', `/feature_importance?method=${fi_method}&values=${values}`)
+            const featuresNames = fetchFromStorage('featuresNames')
+            const barplotData = zipObject(featuresNames, fi)
 
-        const plot = generateBarplot(fi_method, barplotData)
+            const plot = generateBarplot(fi_method, barplotData)
 
-        var img = document.createElement('img')
-        img.src = plot
-        img.style="width: 100%; height: 500px;"
+            var img = document.createElement('img')
+            img.src = plot
+            img.style="width: 100%; height: 500px;"
 
-        text = img.outerHTML
+            text = img.outerHTML
     }
 
     return {
@@ -206,7 +204,6 @@ async function askAltruist() {
 async function handlerAlruist(answer) {
     const options = ['info_altruist', 'interpret_altruist', 'untruthful_features_lime', 'untruthful_features_shap', 'untruthful_features_pi', 'counterfactuals', 'previous_phase']
 
-    //na diavasw ksana fuse kai pws to xrisimopoiw
     const fuse = new Fuse(options, {includeScore: true})
     const result = fuse.search(answer)[0]
     if (!result || result.score > 0.6) {
@@ -216,42 +213,59 @@ async function handlerAlruist(answer) {
         }
     }
 
-
     let next = 'go_back2'
     const features = fetchFromStorage('features')
+    const featuresNames = fetchFromStorage("featuresNames")
     const values = Object.values(features).join(',')
     const explanation = await request('get', `/altruist?values=${values}`)
     const [untruthful, counterfactuals] = explanation
 
-    let fi_method = ''
+    console.log("untruthful: ", untruthful);
+    console.log("counterfactuals: ", counterfactuals);
 
+    let fi_method = ''
     let text= ''
     switch (result.item) {
         case 'info_altruist':
             text = "info about altruist"
             break;
         case 'interpret_altruist':
-            text = "interpretation of altruist"
-            //To do the plot method
-            break;
-        case 'untruthful_features_lime':
-            fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful[0] + " (" + untruthful[0].length + ")"
-            break;
-        case 'untruthful_features_shap':
-            fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful[1] + " (" + untruthful[1].length + ")"
-            break;
-        case 'untruthful_features_pi':
-            fi_method = result.item.split('_').pop()
-            text = "Untruthful features of " + fi_method + " : " + untruthful[2] + " (" + untruthful[2].length + ")"
+            var lengths = untruthful.map(l => l.length)
+
+            const [min1, min2] = getIdxOfTwoMinimun(lengths)
+            const techniques = fetchFromStorage("fis")
+            const valuesTechnique1 = await request('get', `/feature_importance?method=${techniques[min1]}&values=${values}`)
+            const valuesTechnique2 = await request('get', `/feature_importance?method=${techniques[min2]}&values=${values}`)
+
+
+            const altruistValues = []
+            var i = 0
+            featuresNames.forEach(function(feature) {
+                if (untruthful[min1].includes(feature)) {
+                    altruistValues.push(valuesTechnique2[i])
+                }
+                else {
+                    altruistValues.push(valuesTechnique1[i])
+                }
+
+                ++i
+            })
+
+            const barplotData = zipObject(featuresNames, altruistValues)
+
+            const plot = generateBarplot("Altruist", barplotData)
+
+            var img = document.createElement('img')
+            img.src = plot
+            img.style="width: 100%; height: 500px;"
+
+            text = img.outerHTML
             break;
         case 'counterfactuals':
-            const lengths = untruthful.map(l => l.length)
-            const featureNames = fetchFromStorage("featureNames")
+            var lengths = untruthful.map(l => l.length)
 
-            const minIdx = lengths.indexOf(Math.min(...lengths))
-            const counterfactualFeature = featureNames[counterfactuals[minIdx][0][0] - 1]
+            var minIdx = lengths.indexOf(Math.min(...lengths))
+            const counterfactualFeature = featuresNames[counterfactuals[minIdx][0][0] - 1]
 
             text = minIdx > -1 ?
                 'The counterfactuals for the feature: ' + counterfactualFeature + " is " + counterfactuals[minIdx][0][1] :
@@ -262,7 +276,7 @@ async function handlerAlruist(answer) {
             next = "details"
            break;
         default:
-            text = 'testing'
+            text = getUntruthful(result, untruthful)
     }
     return {
         answer: `You chose: ${result.item}\n${text}`,
@@ -276,13 +290,13 @@ function askGoBack2() {
 
 function handleGoBack2(answer) {
     answer = answer.toLowerCase()
-    if (answer == 'yes' || answer == 'y') {
+    if (answer.startsWith('y')) {
         return {
             answer: "Going back!",
             next: 'altruist'
         }
     }
-    else if (answer == 'no' || answer == 'n') {
+    else if (answer.startsWith('n')) {
         return {
             answer: "Alright!",
             next: 'done'
@@ -342,4 +356,33 @@ function zipObject(keys, values) {
     })
 
     return obj;
+}
+
+function getIdxOfTwoMinimun(arr) {
+    const minArray = arr => {
+       const min = arr.reduce((acc, val) => Math.min(acc, val), Infinity);
+       const res = [];
+       for(let i = 0; i < arr.length; i++){
+          if(arr[i] !== min){
+             continue;
+          };
+          res.push(i);
+       };
+       return res;
+    };
+
+    var minIdxArray = minArray(arr)
+    if (minIdxArray.length == 1) {
+        console.log("i am in");
+        arr[minIdxArray[0]] = 10
+        var min2Idx = arr.indexOf(Math.min(...arr))
+        minIdxArray.push(min2Idx)
+    }
+
+    return minIdxArray
+}
+
+function getUntruthful(res, untruthful) {
+    fi_method = res.item.split('_').pop()
+    return "Untruthful features of " + fi_method + " : " + untruthful[0] + " (" + untruthful[0].length + ")"
 }
