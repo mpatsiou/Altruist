@@ -64,26 +64,55 @@ async function handleName(name) {
 
 async function askPrediction() {
     const featureName = await request('get', '/features_names')
+    const stats = await request('get', '/stats')
     storeLocally('featureName', featureName)
 
-    const parsedFeatures = featureName.map(s => "* " + s).join('\n')
-    console.log("parsedFeatures\n", parsedFeatures);
-    console.log("featureName", featureName)
+    const parsedFeatures = []
+    const featuresStats = Object.keys(stats)
 
-    return "Fill in the following features. Please give me the features separated with space (eg. 0 0 0 0):\n" + parsedFeatures
+    featureName.forEach((feature, i) => {
+        if (featuresStats.includes(feature)) {
+            const str = "* " + feature + " (min: " + stats[feature]['min'] + ", max: " + stats[feature]['max'] + ')'
+            console.log(str);
+            parsedFeatures.push(str)
+        }
+        else {
+            parsedFeatures.push("* " + feature)
+        }
+    });
+    const text = parsedFeatures.join('\n')
+    console.log("parsedFeatures\n", text);
+    console.log("featureName", featureName)
+    return "Fill in the following features. Please give me the features separated with space (eg. 0 0 0 0):\n" + text
 }
 
 async function handlePrediction(featureValues) {
     const values = featureValues.split(' ').map(Number)
     const features = {}
-
+    const stats = await request('get', '/stats')
     if (values.length != fetchFromStorage('featureName').length) {
         return {
             answer: "Please give correct feature values",
             next: "prediction"
         }
-
     }
+
+    fetchFromStorage('featureName').forEach((feature, i) => {
+        if (Object.keys(stats).includes(feature)) {
+            const max = stats[feature]['max']
+            const min = stats[feature]['min']
+            console.log("max:", max);
+            console.log("min", min);
+            console.log("value:", values[i]);
+            if (values[i] > max || values[i] < min) {
+                return {
+                    answer: "Please give correct feature values",
+                    next: "prediction"
+                }
+            }
+        }
+    });
+
 
     i = 0
     for (const name of fetchFromStorage('featureName')) {
