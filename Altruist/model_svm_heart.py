@@ -84,5 +84,4 @@ feature_names = get_feature_names()
 values, target = split_for_target()
 dataset = get_dataset(values, feature_names)
 stats = get_dataset_stats(dataset)
-
 svm, scaler, scaled_values, feature_importance = svm_train(dataset)
