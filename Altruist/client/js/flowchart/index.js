@@ -57,27 +57,27 @@ async function handleName(name) {
     storeLocally('name', name)
 
     return {
-        answer: "Nice to meet you! Let's make some prediction.",
+        answer: "Nice to meet you! Now we are ready to make some predictions.\nThen I will present you some explanations",
         next: 'prediction'
     }
 }
 
 async function askPrediction() {
-    const featuresNames = await request('get', '/features_names')
-    storeLocally('featuresNames', featuresNames)
+    const featureName = await request('get', '/features_names')
+    storeLocally('featureName', featureName)
 
-    const parsedFeatures = featuresNames.map(s => "* " + s).join('\n')
+    const parsedFeatures = featureName.map(s => "* " + s).join('\n')
     console.log("parsedFeatures\n", parsedFeatures);
-    console.log("featuresNames", featuresNames)
+    console.log("featureName", featureName)
 
-    return "Fill in the following features. Please give me the features separated with space (eg. 0 0 0 0).:\n" + parsedFeatures
+    return "Fill in the following features. Please give me the features separated with space (eg. 0 0 0 0):\n" + parsedFeatures
 }
 
 async function handlePrediction(featureValues) {
     const values = featureValues.split(' ').map(Number)
     const features = {}
 
-    if (values.length != fetchFromStorage('featuresNames').length) {
+    if (values.length != fetchFromStorage('featureName').length) {
         return {
             answer: "Please give correct feature values",
             next: "prediction"
@@ -86,7 +86,7 @@ async function handlePrediction(featureValues) {
     }
 
     i = 0
-    for (const name of fetchFromStorage('featuresNames')) {
+    for (const name of fetchFromStorage('featureName')) {
         console.log('Feature name', name, values[i]);
         features[name] = values[i]
         ++i
@@ -144,7 +144,7 @@ async function handleDetails(answer) {
 
     if (!result || result.score > 0.6) {
         return {
-            answer: "Invalid options! Answer only some of the specific options",
+            answer: "Invalid options! I'm a bot programmed to answer only some of the specific answers. Here are the topics I can help you with.",
             next: 'details'
         }
     }
@@ -168,8 +168,8 @@ async function handleDetails(answer) {
             const values = Object.values(features).join(',')
 
             const fi = await request('get', `/feature_importance?method=${fi_method}&values=${values}`)
-            const featuresNames = fetchFromStorage('featuresNames')
-            const barplotData = zipObject(featuresNames, fi)
+            const featureName = fetchFromStorage('featureName')
+            const barplotData = zipObject(featureName, fi)
 
             const plot = generateBarplot(fi_method, barplotData)
 
@@ -202,20 +202,20 @@ async function askAltruist() {
 }
 
 async function handlerAlruist(answer) {
-    const options = ['info_altruist', 'interpret_altruist', 'untruthful_features_lime', 'untruthful_features_shap', 'untruthful_features_pi', 'counterfactuals', 'previous_phase']
+    const options = ['info_altruist', 'interpret_altruist', 'untruthful_features_lime', 'untruthful_features_shap', 'untruthful_features_pi', 'counterfactuals', 'previous_step']
 
     const fuse = new Fuse(options, {includeScore: true})
     const result = fuse.search(answer)[0]
     if (!result || result.score > 0.6) {
         return {
-            answer: "Invalid options! Answer only some of the specific options",
+            answer: "Invalid options! I'm a bot programmed to answer only some of the specific answers. Here are the topics I can help you with.",
             next: 'altruist'
         }
     }
 
     let next = 'go_back2'
     const features = fetchFromStorage('features')
-    const featuresNames = fetchFromStorage("featuresNames")
+    const featureName = fetchFromStorage("featureName")
     const values = Object.values(features).join(',')
     const explanation = await request('get', `/altruist?values=${values}`)
     const [untruthful, counterfactuals] = explanation
@@ -233,14 +233,14 @@ async function handlerAlruist(answer) {
             var lengths = untruthful.map(l => l.length)
 
             const [min1, min2] = getIdxOfTwoMinimun(lengths)
-            const techniques = await request('get', '/fis') 
+            const techniques = await request('get', '/fis')
             const valuesTechnique1 = await request('get', `/feature_importance?method=${techniques[min1]}&values=${values}`)
             const valuesTechnique2 = await request('get', `/feature_importance?method=${techniques[min2]}&values=${values}`)
 
 
             const altruistValues = []
             var i = 0
-            featuresNames.forEach(function(feature) {
+            featureName.forEach(function(feature) {
                 if (untruthful[min1].includes(feature)) {
                     altruistValues.push(valuesTechnique2[i])
                 }
@@ -251,7 +251,7 @@ async function handlerAlruist(answer) {
                 ++i
             })
 
-            const barplotData = zipObject(featuresNames, altruistValues)
+            const barplotData = zipObject(featureName, altruistValues)
 
             const plot = generateBarplot("Altruist", barplotData)
 
@@ -265,18 +265,23 @@ async function handlerAlruist(answer) {
             var lengths = untruthful.map(l => l.length)
 
             var minIdx = lengths.indexOf(Math.min(...lengths))
-            const counterfactualFeature = featuresNames[counterfactuals[minIdx][0][0] - 1]
+            if (counterfactuals[minIdx].length < 1) {
+                text = 'No counterfactuals'
+                break;
+
+            }
+            const counterfactualFeature = featureName[counterfactuals[minIdx][0][0] - 1]
 
             text = minIdx > -1 ?
                 'The counterfactuals for the feature: ' + counterfactualFeature + " is " + counterfactuals[minIdx][0][1] :
                 'No counterfactuals'
             break;
-        case 'previous_phase':
-            text = "previous phase"
+        case 'previous_step':
+            text = "previous step"
             next = "details"
            break;
         default:
-            text = getUntruthful(result, untruthful)
+            text = await getUntruthful(result, untruthful)
     }
     return {
         answer: `You chose: ${result.item}\n${text}`,
@@ -382,7 +387,9 @@ function getIdxOfTwoMinimun(arr) {
     return minIdxArray
 }
 
-function getUntruthful(res, untruthful) {
+async function getUntruthful(res, untruthful) {
     fi_method = res.item.split('_').pop()
-    return "Untruthful features of " + fi_method + " : " + untruthful[0] + " (" + untruthful[0].length + ")"
+    const techniques = await request('get', '/fis')
+    const index = techniques.indexOf(fi_method)
+    return "Untruthful features of " + fi_method + " : " + untruthful[index] + " (" + untruthful[index].length + ")"
 }
