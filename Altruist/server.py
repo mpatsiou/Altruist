@@ -13,14 +13,13 @@ svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
 _, target = model_svm.split_for_target(dataset)
 
 
-### TO RUN THE HEART DATASET COMMENT OUT THE FOLLOWING
+## TO RUN THE HEART DATASET COMMENT OUT THE FOLLOWING
 # import model_svm_heart as model_svm
 #
 # features_names = model_svm.get_feature_names()
 # values, target = model_svm.split_for_target()
-# print(values[0])
 # dataset = model_svm.get_dataset(values, features_names)
-# stats = model_svm.get_dataset_stats(dataset)
+# dataset_statistics = model_svm.get_dataset_stats(dataset)
 # svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
 
 fis = {
@@ -34,9 +33,14 @@ CLASS_NAMES = model_svm.get_class_names()
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/stats", methods=['GET'])
+def get_stats():
+    return jsonify(dataset_statistics)
+
 @app.route("/fis", methods=['GET'])
 def get_fis():
-    return jsonify(fi)
+    techniques = list(fis.keys())
+    return jsonify(techniques)
 
 @app.route("/features_names", methods=['GET'])
 def get_feature_names():
