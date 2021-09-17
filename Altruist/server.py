@@ -13,7 +13,7 @@ svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
 _, target = model_svm.split_for_target(dataset)
 
 
-## TO RUN THE HEART DATASET COMMENT OUT THE FOLLOWING
+# ## TO RUN THE HEART DATASET COMMENT OUT THE FOLLOWING
 # import model_svm_heart as model_svm
 #
 # features_names = model_svm.get_feature_names()
@@ -76,7 +76,7 @@ def get_feature_importance():
     if not method or not values:
         return "Wrong input", 400
 
-    values = list(map(int, values.split(',')))
+    values = list(map(float, values.split(',')))
     values = [np.array(values)]
     values = scaler.transform(values)
     feature_importance = fis[method](values[0], "_", svm)
