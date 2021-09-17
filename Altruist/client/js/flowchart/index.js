@@ -195,7 +195,7 @@ async function handleDetails(answer) {
             const [_, fi_method] = result.item.split('_')
             const features = fetchFromStorage('features')
             const values = Object.values(features).join(',')
-
+            console.log("VALUES", values);
             const fi = await request('get', `/feature_importance?method=${fi_method}&values=${values}`)
             const featureName = fetchFromStorage('featureName')
             const barplotData = zipObject(featureName, fi)
@@ -337,7 +337,7 @@ function handleGoBack2(answer) {
         }
     }
 
-    return { answer: "Incomprehensible answer!", next: 'go_back' }
+    return { answer: "Incomprehensible answer!", next: 'go_back2' }
 }
 
 // Function that talks to server
