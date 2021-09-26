@@ -182,13 +182,24 @@ async function handleDetails(answer) {
     switch (result.item) {
         //information cases
         case 'info_lime':
-            text = "info about lime.."
+            text = `Local surrogate models are interpretable models that are used to explain individual predictions of black box machine learning models.
+                    The idea is quite intuitive. First, forget about the training data and imagine you only have the black box model where you can input data points and get the predictions of the model. You can probe the box as often as you want. Your goal is to understand why the machine learning model made a certain prediction.
+                    LIME tests what happens to the predictions when you give variations of your data into the machine learning model. LIME generates a new dataset consisting of perturbed samples and the corresponding predictions of the black box model. On this new dataset LIME then trains an interpretable model, which is weighted by the proximity of the sampled instances to the instance of interest.
+                    `
             break
         case 'info_shap':
-            text = "info about shap.."
+            text = `Shapely values are obtained by incorporating concepts from Cooperative Game Theory and local explanations.
+                    Given a set of palyers, Cooperative Game Theory defines how well and fairly to distribute the payoff amongst all the payers that are working in coordination.
+                    The analogy here is: players are equivalent to independent features and payoff is the difference between the average prediction of the instance minus the average prediction of all instances.
+                    `
             break
         case 'info_pi':
-            text = "info about pi.."
+            text = `The permutation feature importance is defined to be the decrease in a model score when a single feature value is randomly shuffled 1.
+                    This procedure breaks the relationship between the feature and the target, thus the drop in the model score is indicative of how much the model depends on the feature.
+                    The concept is really straightforward:
+                    We measure the importance of a feature by calculating the increase in the model's prediction error after permuting the feature.
+                    A feature is "important" if shuffling its values increases the model error, because in this case the model relied on the feature for the prediction. A feature is "unimportant" if shuffling its values leaves the model error unchanged, because in this case the model ignored the feature for the prediction.
+                    `
             break
         default:
             //Interpretation cases
@@ -256,7 +267,10 @@ async function handlerAlruist(answer) {
     let text= ''
     switch (result.item) {
         case 'info_altruist':
-            text = "info about altruist"
+            text = `Altruist is deploying an innovative technique combining feature importance interpretation techniques and argumentation, transforming untruthful interpretations on the decisionmaking of ML models into profound explanations for the end users, which are justifiable as well.
+                    Altruist provides the local maximum truthful interpretation, as well as the justification for the truthfulness.
+                    Moreover, it can be used as a tool for automatic selection of the most truthful interpretation among a variety of X different interpretation techniques.
+                    `
             break;
         case 'interpret_altruist':
             var lengths = untruthful.map(l => l.length)
