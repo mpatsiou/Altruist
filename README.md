@@ -24,8 +24,7 @@ Then, in your terminal copy the localhost url and open it in your browser.
 ## Contributors on Altruist Bot
 Name | Email | Contribution
 --- | --- | ---
-
-[Thanos Mpatsioulas] | mpatsiou@csd.auth.gr | Main
+Thanos Mpatsioulas | mpatsiou@csd.auth.gr | Main 
 [Ioannis Mollas](https://intelligence.csd.auth.gr/people/ioannis-mollas/) | iamollas@csd.auth.gr | Supervision
 [Nick Bassiliades](https://intelligence.csd.auth.gr/people/bassiliades/) | nbassili@csd.auth.gr | Supervision
 
