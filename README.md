@@ -22,7 +22,7 @@ docker run -p 8888:8888 johnmollas/altruist
 Then, in your terminal copy the localhost url and open it in your browser.
 
 ## Contributors on Altruist Bot
-Name | Email
+Name | Email | Contribution
 --- | --- | ---
 
 [Thanos Mpatsioulas] | mpatsiou@csd.auth.gr | Main
