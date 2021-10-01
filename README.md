@@ -21,12 +21,13 @@ docker run -p 8888:8888 johnmollas/altruist
 ```
 Then, in your terminal copy the localhost url and open it in your browser.
 
-## Contributors on Altruist
+## Contributors on Altruist Bot
 Name | Email
---- | ---
-[Ioannis Mollas](https://intelligence.csd.auth.gr/people/ioannis-mollas/) | iamollas@csd.auth.gr
-[Grigorios Tsoumakas](https://intelligence.csd.auth.gr/people/tsoumakas/) | greg@csd.auth.gr
-[Nick Bassiliades](https://intelligence.csd.auth.gr/people/bassiliades/) | nbassili@csd.auth.gr
+--- | --- | ---
+
+[Thanos Mpatsioulas] | mpatsiou@csd.auth.gr | Main
+[Ioannis Mollas](https://intelligence.csd.auth.gr/people/ioannis-mollas/) | iamollas@csd.auth.gr | Supervision
+[Nick Bassiliades](https://intelligence.csd.auth.gr/people/bassiliades/) | nbassili@csd.auth.gr | Supervision
 
 ## See our Work
 [LionLearn Interpretability Library](https://github.com/intelligence-csd-auth-gr/LionLearn) containing: 
