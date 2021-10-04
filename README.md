@@ -15,8 +15,30 @@ Please ensure you have installed the necessary libraries. Then:
 ```bash
 python3 server.py
 ```
-After successfully running server of Altruist Bot, please go to your browser to the proposed url (probably will be the following):
+After successfully running server of Altruist Bot, please go to your browser to the proposed url:
+```bash
+file:///your/path/Altruist/Altruist/client/index.html
+```
+Then, you can use the Altruist Bot.
 
+## Change Dataset
+If you want to test the bot for Heart Statlog dataset, you can go to the server.py file and comment out the following:
+
+import model_svm_heart as model_svm
+features_names = model_svm.get_feature_names()
+values, target = model_svm.split_for_target()
+dataset = model_svm.get_dataset(values, features_names)
+dataset_statistics = model_svm.get_dataset_stats(dataset)
+svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
+
+And comment on the corresponding code:
+
+import model_svm
+dataset = model_svm.get_dataset()
+dataset_statistics = model_svm.get_dataset_stats(dataset)
+features_names = model_svm.get_feature_names(dataset)
+svm, scaler, X_svm, fi_svm = model_svm.svm_train(dataset)
+_, target = model_svm.split_for_target(dataset)
 
 ## Contributors on Altruist Bot
 Name | Email | Contribution
