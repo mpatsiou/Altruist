@@ -11,6 +11,12 @@ This paper introduces the "Altruist" (Argumentative expLanaTions thRoUgh local I
 a person unselfishly concerned for or devoted to the welfare of others (opposed to egoist).
 
 ## Instructions
+Please ensure you have installed the necessary libraries. Then:
+```bash
+python3 server.py
+```
+After successfully running server of Altruist Bot, please go to your browser to the proposed url (probably will be the following):
+
 
 ## Contributors on Altruist Bot
 Name | Email | Contribution
